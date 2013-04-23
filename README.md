@@ -25,4 +25,4 @@ Basically, if you run this script as `./countgrab.py url http://www.google.com`,
 
 ## Thanks
 
-Special thanks go obviously to [Yahel Carmon](http://yahelc.com/) for developing [SharedCount](http://sharedcount.com/)! And check out [Distilled](http://www.distilled.net/) (no affiliation with Yahel Carmon), as this was written primarily for their benefit.
+Special thanks go obviously to [Yahel Carmon](http://yahelc.com/) for developing [SharedCount](http://sharedcount.com/)! And check out [Distilled](http://www.distilled.net/) (no affiliation with Yahel Carmon or SharedCount), as this was written primarily for their benefit.
