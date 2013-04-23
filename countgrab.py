@@ -70,7 +70,7 @@ def form_csv(in_list):
 
 def help():
     print()
-    print('Usage: ./freecounts.py [url|list] <resource> (outfile)')
+    print('Usage: ./countgrab.py [url|list] <resource> (outfile)')
     print()
     print('    url: Return JSON string with social metrics for')
     print('            the URL specified by <resource>. URL')
