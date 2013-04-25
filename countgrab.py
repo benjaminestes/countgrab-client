@@ -10,7 +10,7 @@ KEYLIST = ['Pinterest', 'LinkedIn', 'Facebook like_count', 'StumbleUpon',
            'Delicious', 'Twitter', 'Facebook commentsbox_count', 
            'Facebook click_count', 'Diggs', 'Buzz', 'Facebook comment_count', 'Reddit']
 
-def countgrab(url, strict = True):
+def count_grab(url, strict = True):
     "Grab social metrics for url. Will exit script if it fails unless strict == False."
     request_url = 'http://api.sharedcount.com/?url=' + url
 
@@ -50,6 +50,43 @@ def linear_data(url, data):
 
     return url_entry
 
+def dump_grab(urls):
+    "Iterate over urls and return data as a string."
+
+    out = {}
+
+    for url in urls:
+        out[url] = count_grab(url, strict = False) 
+    
+    # format the output to be json compatible
+    out_string = str(out)
+    out_string = out_string.replace('\'', '\"')
+    out_string = out_string.replace("None", "null")
+
+    return out_string
+
+def bulk_grab(urls):
+    "Iterate over urls and return data as a list for CSV."
+
+    out = []
+    
+    # KEYLIST is based on output from API, we need to add
+    # URL as first CSV column
+    headerlist = KEYLIST[:]
+    headerlist.insert(0, "URL")
+    out.append(headerlist)
+
+    for url in urls:
+        print("Fetching data for:", url, end="... ")
+        try:
+            url_data = linear_data(url, count_grab(url, strict = False))
+            out.append(url_data)
+            print('Data retrieved.')
+        except:
+            print('Error fetching info.')
+
+    return out
+
 def help():
     print()
     print('Usage: ./countgrab.py [url|list] <resource> (outfile)')
@@ -82,60 +119,31 @@ def main():
             help()
             sys.exit()
 
-        # human readable output is desirable for the url case
-        json_pretty(countgrab(option))
+        # Human readable output is desirable for the url case
+        json_pretty(count_grab(option))
 
-    if command == "list":
+    elif command == "list":
         if not option:
             help()
             sys.exit()
 
+        # Read list of URLs
         urls = []
-
         with open(option, 'r') as f:
             for line in f:
                 urls.append(line.rstrip())
 
         if not csvfile:
-            # ...then just hoard all the data and dump it when done
-            out = {}
-
-            for url in urls:
-                out[url] = countgrab(url, strict = False) 
-            
-            # format the output to be json compatible
-            out_string = str(out)
-            out_string = out_string.replace('\'', '\"')
-            out_string = out_string.replace("None", "null")
-
-            print(out_string)
-
+            print(dump_grab(urls))
         else:
-            out = []
-            
-            # KEYLIST is based on output from API, we need to add
-            # URL as first CSV column
-            headerlist = KEYLIST[:]
-            headerlist.insert(0, "URL")
-            out.append(headerlist)
-
-            for url in urls:
-                print("Fetching data for:", url, end="... ")
-                try:
-                    url_data = linear_data(url, countgrab(url, strict = False))
-                    out.append(url_data)
-                    print('Data retrieved.')
-                except:
-                    print('Error fetching info.')
+            output = bulk_grab(urls)
 
             print("Writing output CSV.")
-
             with open(csvfile, 'w', newline='') as c:
                 writer = csv.writer(c, delimiter=',',
-                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                writer.writerows(out)
-
-            print('Write successful.')
+                                    quotechar='"', 
+                                    quoting=csv.QUOTE_MINIMAL)
+                writer.writerows(output)
 
 if __name__ == '__main__':
     sys.exit(main())
