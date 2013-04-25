@@ -3,6 +3,7 @@
 import sys
 import json
 import urllib.request
+import csv
 
 KEYLIST = ['Pinterest', 'LinkedIn', 'Facebook like_count', 'StumbleUpon',
            'Facebook share_count', 'Facebook total_count', 'GooglePlusOne', 
@@ -49,25 +50,6 @@ def linear_data(url, data):
 
     return url_entry
 
-def form_csv(in_list):
-    "Transform the provided list into a string with comma separated values."
-    csv = ''
-
-    # this is probably very naive, but it works
-    
-    for i in in_list:
-        # Add to CSV if there was actually output for that line
-        if i:
-            for j in i:
-                    # these replacements should not occur in practice
-                    item = str(j)
-                    item = item.replace('"','?')  # replace characters reserved by
-                    item = item.replace(',','?')  # csv format
-                    csv += '"' + item + '",'
-            csv += '\n'
-
-    return csv
-
 def help():
     print()
     print('Usage: ./countgrab.py [url|list] <resource> (outfile)')
@@ -88,7 +70,7 @@ def main():
 
     command = sys.argv[1] if len(sys.argv) > 1 else None
     option = sys.argv[2] if len(sys.argv) > 2 else None
-    csv = sys.argv[3] if len(sys.argv) > 3 else None
+    csvfile = sys.argv[3] if len(sys.argv) > 3 else None
 
     # If not invoked properly print help and exit
     if not command:
@@ -110,15 +92,11 @@ def main():
 
         urls = []
 
-        try:
-            f = open(option)
+        with open(option, 'r') as f:
             for line in f:
                 urls.append(line.rstrip())
-            f.close()
-        except:
-            exit('Error: Input file not opened')
 
-        if not csv:
+        if not csvfile:
             # ...then just hoard all the data and dump it when done
             out = {}
 
@@ -152,12 +130,10 @@ def main():
 
             print("Writing output CSV.")
 
-            try:
-                c = open(csv, 'w')
-                c.write(form_csv(out))
-                c.close()
-            except:
-                exit('Error: Output not written.')
+            with open(csvfile, 'w', newline='') as c:
+                writer = csv.writer(c, delimiter=',',
+                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                writer.writerows(out)
 
             print('Write successful.')
 
