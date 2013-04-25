@@ -29,7 +29,7 @@ def json_pretty(data):
         print(json.dumps(data, sort_keys = True, indent = 4))
 
 def linear_data(url, data):
-    "Check a dict for dict elements and merge the elements of the second into the first." 
+    "SharedCount returns 'two-dimensional' JSON string. This flattens it." 
     flattened = {}
 
     for i in data:
@@ -100,6 +100,7 @@ def main():
             help()
             sys.exit()
 
+        # human readable output is desirable for the url case
         json_pretty(countgrab(option))
 
     if command == "list":
