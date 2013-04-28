@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 import sys
 import json
 import urllib.request
@@ -13,7 +14,7 @@ KEYLIST = ['Pinterest', 'LinkedIn', 'Facebook like_count', 'StumbleUpon',
 def count_grab(url, strict = True):
     "Grab social metrics for url. Will exit script if it fails unless strict == False."
     request_url = 'http://api.sharedcount.com/?url=' + url
-
+    
     try:
         api_data = urllib.request.urlopen(request_url)
         api_json = json.loads(api_data.read().decode('utf-8'))
@@ -51,7 +52,7 @@ def linear_data(url, data):
     return url_entry
 
 def dump_grab(urls):
-    "Iterate over urls and return data as a string."
+    "Iterate over urls and return data as a JSON style string."
 
     out = {}
 
@@ -87,63 +88,52 @@ def bulk_grab(urls):
 
     return out
 
-def help():
-    print()
-    print('Usage: ./countgrab.py [url|list] <resource> (outfile)')
-    print()
-    print('    url: Return JSON string with social metrics for')
-    print('            the URL specified by <resource>. URL')
-    print('            must begin with "http://".')
-    print('    list: Return a JSON file with social metrics for')
-    print('            the list of URLs, in the .txt file specified')
-    print('            by resource. One URL per line. If no CSV is')
-    print('            specified, dump all data to command line after')
-    print('            request is complete.')
-    print('    outfile: If specified, write to this CSV instead')
-    print('            of the terminal. This is ignored in url mode.')
-    print()
+def build_parser():
+    parser = argparse.ArgumentParser(description = 'Pull social metrics from SharedCount API')
+
+    command_opts = ['url','list']
+
+    parser.add_argument('command',
+                        choices = command_opts,
+                        help = 'specify operating mode')
+
+    parser.add_argument('source',
+                        help = 'specify a URL or text file as appropriate')
+
+    parser.add_argument('-d', '--dest',
+                        help = 'specify an output file; used in list mode')
+
+    return parser
 
 def main():
 
-    command = sys.argv[1] if len(sys.argv) > 1 else None
-    option = sys.argv[2] if len(sys.argv) > 2 else None
-    csvfile = sys.argv[3] if len(sys.argv) > 3 else None
+    parser = build_parser()
+    args = parser.parse_args()
 
-    # If not invoked properly print help and exit
-    if not command:
-        help()
-        sys.exit()
-
-    if command == "url":
-        if not option:
-            help()
-            sys.exit()
-
+    if args.command == "url":
         # Human readable output is desirable for the url case
-        json_pretty(count_grab(option))
+        json_pretty(count_grab(args.source))
 
-    elif command == "list":
-        if not option:
-            help()
+    elif args.command == "list":
+        # List mode requires output file
+        if not args.dest:
+            parser.print_help()
             sys.exit()
 
         # Read list of URLs
         urls = []
-        with open(option, 'r') as f:
+        with open(args.source, 'r') as f:
             for line in f:
                 urls.append(line.rstrip())
 
-        if not csvfile:
-            print(dump_grab(urls))
-        else:
-            output = bulk_grab(urls)
+        output = bulk_grab(urls)
 
-            print("Writing output CSV.")
-            with open(csvfile, 'w', newline='') as c:
-                writer = csv.writer(c, delimiter=',',
-                                    quotechar='"', 
-                                    quoting=csv.QUOTE_MINIMAL)
-                writer.writerows(output)
+        print("Writing output CSV.")
+        with open(args.dest, 'w', newline='') as c:
+            writer = csv.writer(c, delimiter=',',
+                                quotechar='"', 
+                                quoting=csv.QUOTE_MINIMAL)
+            writer.writerows(output)
 
 if __name__ == '__main__':
     sys.exit(main())
